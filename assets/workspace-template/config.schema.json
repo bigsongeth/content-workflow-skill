@@ -1,0 +1,812 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/content-agent-config.schema.json",
+  "title": "Content Agent Config",
+  "description": "Configuration for a creator-focused content workflow skill. The skill stays generic; user-specific persona, storage, writing, and automation preferences live here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "user",
+    "assistant",
+    "accounts",
+    "storage",
+    "content_workflow"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Config schema version.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.8.0"
+    },
+    "user": {
+      "$ref": "#/$defs/user"
+    },
+    "assistant": {
+      "$ref": "#/$defs/assistant"
+    },
+    "accounts": {
+      "type": "array",
+      "description": "Creator account matrix. Each account can have its own positioning, audience, style, and storage route.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/account"
+      }
+    },
+    "storage": {
+      "$ref": "#/$defs/storage"
+    },
+    "content_workflow": {
+      "$ref": "#/$defs/contentWorkflow"
+    },
+    "hot_tracker": {
+      "$ref": "#/$defs/hotTracker"
+    },
+    "video_processing": {
+      "$ref": "#/$defs/videoProcessing"
+    },
+    "automation": {
+      "$ref": "#/$defs/automation"
+    },
+    "permissions": {
+      "$ref": "#/$defs/permissions"
+    },
+    "integrations": {
+      "$ref": "#/$defs/integrations"
+    },
+    "onboarding": {
+      "$ref": "#/$defs/onboarding"
+    }
+  },
+  "$defs": {
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "display_name"
+      ],
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "description": "How the assistant should address the user. May be empty in onboarding templates; runtime readiness is tracked by onboarding.missing_fields."
+        },
+        "location": {
+          "type": "string",
+          "description": "Optional location or base city, used only when relevant to content."
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short creator background, qualifications, lived experience, or public identity that can be used in content."
+        },
+        "private_notes": {
+          "type": "string",
+          "description": "Private context for the assistant. Do not expose in shared or public outputs."
+        }
+      }
+    },
+    "assistant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Optional assistant nickname."
+        },
+        "role": {
+          "type": "string",
+          "description": "Expected role, such as content partner, writing coach, operations assistant, or strategist."
+        },
+        "interaction_style": {
+          "type": "array",
+          "description": "How the assistant should sound in normal collaboration.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "communication_rules": {
+          "type": "array",
+          "description": "User-specific collaboration rules, such as be concise, ask fewer questions, or never push decisions.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "positioning"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Stable machine-readable account ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable account name."
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "positioning": {
+          "type": "string",
+          "description": "Account positioning or niche."
+        },
+        "persona": {
+          "type": "array",
+          "description": "Human persona keywords, such as professional, warm, sharp, practical, healing.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "audience": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "pain_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "desired_outcomes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "content_boundaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowed_topics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "avoid_topics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "claims_policy": {
+              "type": "string",
+              "description": "Rules for sensitive claims, such as medical, legal, financial, or therapeutic claims."
+            }
+          }
+        },
+        "writing_profile": {
+          "$ref": "#/$defs/writingProfile"
+        },
+        "default_storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspace_id": {
+              "type": "string"
+            },
+            "drafts_route": {
+              "type": "string"
+            },
+            "published_route": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "writingProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "formats": {
+          "type": "array",
+          "description": "Primary output formats.",
+          "items": {
+            "enum": [
+              "short_video_script",
+              "long_video_script",
+              "longform_article",
+              "xiaohongshu_note",
+              "douyin_caption",
+              "wechat_article",
+              "newsletter",
+              "livestream_script",
+              "outline",
+              "podcast_outline",
+              "tweet_thread",
+              "other"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "tone": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "structure": {
+          "type": "array",
+          "description": "Preferred structure, such as hook, example, insight, action step.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "length_defaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "short_video_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "article_words": {
+              "type": "integer",
+              "minimum": 50
+            }
+          }
+        },
+        "style_references": {
+          "type": "array",
+          "description": "Reference accounts, links, or short notes describing desired style.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "banned_words": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "must_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_provider",
+        "workspaces",
+        "routes"
+      ],
+      "properties": {
+        "default_provider": {
+          "enum": [
+            "feishu",
+            "notion",
+            "local",
+            "obsidian",
+            "google_drive",
+            "other"
+          ]
+        },
+        "workspaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/storageWorkspace"
+          }
+        },
+        "routes": {
+          "type": "object",
+          "description": "Logical content categories mapped to storage targets. Route keys should be stable names used by skills.",
+          "additionalProperties": {
+            "$ref": "#/$defs/storageRoute"
+          },
+          "propertyNames": {
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          }
+        },
+        "link_policy": {
+          "enum": [
+            "always_return_link",
+            "return_link_when_available",
+            "never_return_link"
+          ],
+          "default": "return_link_when_available"
+        },
+        "naming_rules": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "date_format": {
+              "type": "string",
+              "default": "YYYY-MM-DD"
+            },
+            "patterns": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "storageWorkspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "provider",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "provider": {
+          "enum": [
+            "feishu",
+            "notion",
+            "local",
+            "obsidian",
+            "google_drive",
+            "other"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "external_id": {
+          "type": "string",
+          "description": "Provider-specific workspace ID, such as Feishu space_id or Notion database/page ID."
+        },
+        "base_path": {
+          "type": "string",
+          "description": "Local directory, Obsidian vault path, or provider path."
+        }
+      }
+    },
+    "storageRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id"
+      ],
+      "properties": {
+        "workspace_id": {
+          "type": "string"
+        },
+        "provider_target_id": {
+          "type": "string",
+          "description": "Provider-specific folder, wiki node, database, page, or directory ID."
+        },
+        "path": {
+          "type": "string",
+          "description": "Human-readable path or local relative path."
+        },
+        "description": {
+          "type": "string"
+        },
+        "create_mode": {
+          "enum": [
+            "new_document",
+            "append_to_document",
+            "new_file",
+            "append_to_file",
+            "manual"
+          ],
+          "default": "new_document"
+        },
+        "default_title_pattern": {
+          "type": "string",
+          "description": "Title pattern, such as '[转写] {title}' or '热点追踪日报 {date}'."
+        }
+      }
+    },
+    "contentWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default_account_id": {
+          "type": "string"
+        },
+        "ask_before_writing_when_account_unclear": {
+          "type": "boolean",
+          "default": true
+        },
+        "content_categories": {
+          "type": "array",
+          "description": "Logical content asset categories this workflow uses.",
+          "items": {
+            "enum": [
+              "knowledge_system",
+              "hot_topics",
+              "transcripts",
+              "competitors",
+              "topic_pool",
+              "drafts",
+              "published",
+              "historical_articles",
+              "materials",
+              "reviews",
+              "other"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "draft_lifecycle": {
+          "type": "array",
+          "description": "Default steps from idea to publishing.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confirmation_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ask_before_saving": {
+              "type": "boolean",
+              "default": false
+            },
+            "ask_before_external_share": {
+              "type": "boolean",
+              "default": true
+            },
+            "ask_after_each_revision": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      }
+    },
+    "hotTracker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "weibo",
+              "douyin",
+              "xiaohongshu",
+              "zhihu",
+              "baidu",
+              "toutiao",
+              "bilibili",
+              "all"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "topic_fields": {
+          "type": "array",
+          "description": "Creator fields to match against trends.",
+          "items": {
+            "$ref": "#/$defs/topicField"
+          }
+        },
+        "selection_preferences": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "preferred_angles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "avoid_topics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "max_recommendations": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "output_route": {
+          "type": "string",
+          "description": "Storage route key for generated trend reports."
+        }
+      }
+    },
+    "topicField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "keywords"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "angle_guidance": {
+          "type": "string",
+          "description": "How to turn matched trends into content angles for this field."
+        }
+      }
+    },
+    "videoProcessing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "default_action": {
+          "enum": [
+            "summarize",
+            "transcribe",
+            "extract_topics",
+            "rewrite_article",
+            "ask"
+          ],
+          "default": "ask"
+        },
+        "supported_platform_priority": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "competitor_detection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "save_when_user_says": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "default_route": {
+              "type": "string"
+            }
+          }
+        },
+        "routes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "transcripts": {
+              "type": "string"
+            },
+            "competitors": {
+              "type": "string"
+            },
+            "rewrites": {
+              "type": "string"
+            }
+          }
+        },
+        "output_format": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "summary",
+              "transcript",
+              "chapters",
+              "key_quotes",
+              "article_angles",
+              "rewrite"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone, such as Asia/Shanghai."
+        },
+        "hot_topic_push": {
+          "$ref": "#/$defs/scheduledJob"
+        },
+        "publish_reminder": {
+          "$ref": "#/$defs/scheduledJob"
+        },
+        "review_reminder": {
+          "$ref": "#/$defs/scheduledJob"
+        }
+      }
+    },
+    "scheduledJob": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "schedule": {
+          "type": "string",
+          "description": "Human-readable schedule or RRULE, depending on the host automation system."
+        },
+        "destination": {
+          "enum": [
+            "current_chat",
+            "dm",
+            "group",
+            "document",
+            "calendar",
+            "local_only"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow_create_documents": {
+          "type": "boolean",
+          "default": true
+        },
+        "allow_edit_existing_documents": {
+          "type": "boolean",
+          "default": false
+        },
+        "allow_send_messages": {
+          "type": "boolean",
+          "default": true
+        },
+        "allow_create_reminders": {
+          "type": "boolean",
+          "default": false
+        },
+        "require_confirmation_for": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "delete",
+              "overwrite",
+              "external_share",
+              "public_publish",
+              "send_email",
+              "calendar_invite",
+              "bulk_operation",
+              "paid_action",
+              "legal_commitment"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "secret_policy": {
+          "type": "string",
+          "description": "Guidance for credentials. Config should contain environment variable names, not secret values."
+        }
+      }
+    },
+    "integrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bibi": {
+          "$ref": "#/$defs/integration"
+        },
+        "feishu": {
+          "$ref": "#/$defs/integration"
+        },
+        "notion": {
+          "$ref": "#/$defs/integration"
+        },
+        "obsidian": {
+          "$ref": "#/$defs/integration"
+        },
+        "local": {
+          "$ref": "#/$defs/integration"
+        },
+        "google_drive": {
+          "$ref": "#/$defs/integration"
+        },
+        "other": {
+          "$ref": "#/$defs/integration"
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "credential_env": {
+          "type": "string",
+          "description": "Environment variable name that stores the credential. Never put the credential value here."
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "onboarding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "completed": {
+          "type": "boolean",
+          "default": false
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "missing_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "last_reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

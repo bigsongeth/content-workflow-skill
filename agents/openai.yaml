@@ -1,0 +1,4 @@
+interface:
+  display_name: "Content Workflow Workspace"
+  short_description: "Install or test a reusable onboarding-driven content workspace."
+  default_prompt: "Use $content-workflow-workspace to install a clean content workflow workspace and test its first-run onboarding."

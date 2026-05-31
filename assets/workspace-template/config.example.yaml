@@ -1,0 +1,323 @@
+version: "1.8.0"
+
+user:
+  display_name: ""
+  location: ""
+  bio: ""
+  private_notes: ""
+
+assistant:
+  name: 内容搭档
+  role: ""
+  interaction_style:
+    - 主动
+    - 简洁
+    - 有主见
+    - 适合内容共创
+  communication_rules:
+    - 选题阶段自然引导，不做强制选择题。
+    - 写作阶段先确认账号，除非用户已经说清楚。
+    - 定稿后提醒用户可以设置发布提醒。
+
+accounts:
+  - id: primary_account
+    name: ""
+    platforms:
+      - 小红书
+      - 抖音
+    positioning: ""
+    persona:
+      - 专业
+      - 温暖
+      - 生活化
+      - 可执行
+    audience:
+      description: 想改善饮食、体重、情绪状态和生活质量的人。
+      pain_points:
+        - 不知道如何健康饮食
+        - 容易焦虑和内耗
+        - 想获得可执行的生活建议
+      desired_outcomes:
+        - 吃得更健康
+        - 情绪更稳定
+        - 建立更好的日常习惯
+    content_boundaries:
+      allowed_topics:
+        - 营养科普
+        - 心理健康
+        - 情绪管理
+        - 生活方式
+      avoid_topics:
+        - 夸大疗效
+        - 未经证实的医疗建议
+      claims_policy: 涉及健康、营养、心理建议时保持谨慎，避免诊断式表达。
+    writing_profile:
+      formats:
+        - short_video_script
+        - xiaohongshu_note
+      tone:
+        - 说人话
+        - 有温度
+        - 专业但不端着
+      structure:
+        - 钩子
+        - 日常案例
+        - 专业解释
+        - 可执行建议
+        - 收尾金句
+      length_defaults:
+        short_video_seconds: 60
+        article_words: 900
+      style_references: []
+      banned_words: []
+      must_include: []
+    default_storage:
+      workspace_id: local_workspace
+      drafts_route: drafts
+      published_route: published
+
+storage:
+  default_provider: local
+  workspaces:
+    - id: local_workspace
+      provider: local
+      name: 默认知识结构
+      description: 默认本地知识库；适合还没有现成知识体系的新用户，先用四个基础分区开始沉淀内容。
+      base_path: ./知识结构
+  routes:
+    knowledge_system:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 知识体系
+      description: 用户的长期知识输入，例如书籍、文章、课程、研究和个人观点。
+      create_mode: new_document
+      default_title_pattern: "[知识] {title}"
+    hot_topics:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 热点素材
+      description: 每日抓取的热点内容、趋势、榜单和选题机会。
+      create_mode: new_document
+      default_title_pattern: 热点追踪日报 {date}
+    transcripts:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 知识体系/转写
+      description: 视频、播客、音频转写内容；默认作为知识输入的一部分。
+      create_mode: new_document
+      default_title_pattern: "[转写] {title}"
+    competitors:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 竞品素材
+      description: 竞品账号文章、视频转写和拆解。
+      create_mode: new_document
+      default_title_pattern: "[竞品] {title}"
+    drafts:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 历史文章/共创草稿
+      description: 和 Agent 一起写过的草稿、半成品文稿和修改过程。
+      create_mode: new_document
+      default_title_pattern: "[文稿] {date} {title}"
+    published:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 历史文章/已发布
+      description: 已发布内容归档。
+      create_mode: new_document
+    historical_articles:
+      workspace_id: local_workspace
+      provider_target_id: ""
+      path: 历史文章
+      description: 用户过往发布的内容，以及和 Agent 一起写过的文章总归档。
+      create_mode: new_document
+  link_policy: always_return_link
+  naming_rules:
+    date_format: YYYY-MM-DD
+    patterns:
+      knowledge_system: "[知识] {title}"
+      hot_topics: 热点追踪日报 {date}
+      transcripts: "[转写] {title}"
+      competitors: "[竞品] {title}"
+      drafts: "[文稿] {date} {title}"
+
+content_workflow:
+  default_account_id: primary_account
+  ask_before_writing_when_account_unclear: true
+  content_categories:
+    - hot_topics
+    - knowledge_system
+    - transcripts
+    - competitors
+    - topic_pool
+    - drafts
+    - published
+    - historical_articles
+    - materials
+    - reviews
+  draft_lifecycle:
+    - 选题
+    - 大纲
+    - 初稿
+    - 修改
+    - 定稿
+    - 发布提醒
+    - 数据复盘
+  confirmation_policy:
+    ask_before_saving: false
+    ask_before_external_share: true
+    ask_after_each_revision: true
+
+hot_tracker:
+  enabled: true
+  sources:
+    - weibo
+    - douyin
+    - xiaohongshu
+    - zhihu
+    - baidu
+    - toutiao
+    - bilibili
+  topic_fields:
+    - name: 示例领域
+      keywords:
+        - 行业关键词
+        - 用户问题
+        - 热点事件
+      angle_guidance: 用这个字段记录你想长期追踪的内容方向，以及希望如何切入热点。
+  selection_preferences:
+    preferred_angles:
+      - 干货
+      - 故事
+      - 情绪共鸣
+    avoid_topics:
+      - 低俗八卦
+      - 高风险医疗承诺
+    max_recommendations: 8
+  output_route: hot_topics
+
+video_processing:
+  enabled: true
+  default_action: summarize
+  supported_platform_priority:
+    - B站
+    - 小红书
+    - 抖音
+    - YouTube
+    - 播客
+  competitor_detection:
+    save_when_user_says:
+      - 竞品
+      - 对标
+      - 参考这个
+      - 拆解一下
+    default_route: competitors
+  routes:
+    transcripts: transcripts
+    competitors: competitors
+    rewrites: drafts
+  output_format:
+    - summary
+    - transcript
+    - key_quotes
+    - article_angles
+
+automation:
+  timezone: Asia/Shanghai
+  hot_topic_push:
+    enabled: true
+    schedule: 每天 09:00
+    destination: dm
+    notes: 推送当天热点与选题方向，附文档链接。
+  publish_reminder:
+    enabled: false
+    destination: calendar
+    notes: 用户定稿后再询问是否创建发布提醒。
+  review_reminder:
+    enabled: false
+    destination: dm
+    notes: 发布后 24-48 小时提醒复盘数据。
+
+permissions:
+  allow_create_documents: true
+  allow_edit_existing_documents: false
+  allow_send_messages: true
+  allow_create_reminders: false
+  require_confirmation_for:
+    - delete
+    - overwrite
+    - external_share
+    - public_publish
+    - send_email
+    - calendar_invite
+    - bulk_operation
+    - paid_action
+    - legal_commitment
+  secret_policy: 配置文件只记录环境变量名，不保存 token、密钥或密码明文。
+
+integrations:
+  content_gateway:
+    enabled: true
+    base_url: http://fm.rainplay.cn:26056
+    credential_env: CONTENT_GATEWAY_API_KEY
+    activation_status: pending
+    plan: ""
+    expires_at: ""
+    renewal_url: 微信 isjuss
+    support_url: 微信 isjuss
+    billing_plans:
+      lifetime:
+        name: 买断制
+        price_cny: 599
+        period: lifetime
+        features:
+          - hot_rankings
+          - video_audio_transcription
+      annual:
+        name: 年订阅
+        price_cny: 199
+        period: year
+        features:
+          - hot_rankings
+          - video_audio_transcription
+      monthly:
+        name: 月订阅
+        price_cny: 25
+        period: month
+        features:
+          - hot_rankings
+          - video_audio_transcription
+  bibi:
+    enabled: true
+    gateway_url: http://fm.rainplay.cn:26056/v1/bibi
+    credential_env: CONTENT_GATEWAY_API_KEY
+  hot_rankings:
+    enabled: true
+    gateway_url: http://fm.rainplay.cn:26056/v1/hot
+    credential_env: CONTENT_GATEWAY_API_KEY
+  feishu:
+    enabled: true
+    credential_env: FEISHU_ACCESS_TOKEN
+  notion:
+    enabled: false
+  obsidian:
+    enabled: false
+
+onboarding:
+  completed: false
+  context_aware_intro: true
+  activation_required: false
+  activation_checked: false
+  context_sources:
+    - current_conversation
+    - agent_memory
+    - USER.md
+    - MEMORY.md
+    - SOUL.md
+    - IDENTITY.md
+  missing_fields:
+    - user.display_name
+    - assistant.role
+    - accounts[0].name
+    - accounts[0].positioning

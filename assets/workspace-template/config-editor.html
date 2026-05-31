@@ -1,0 +1,1855 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Content Agent Config Editor</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-soft: #f0f5f4;
+      --ink: #172026;
+      --muted: #63707a;
+      --line: #d9e0e4;
+      --accent: #176b63;
+      --accent-strong: #0f4f49;
+      --amber: #a76a12;
+      --rose: #9f4156;
+      --blue: #315f91;
+      --focus: #2b8a7e;
+      --shadow: 0 18px 45px rgba(23, 32, 38, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 72px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 220px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .button:hover {
+      border-color: #b9c6cc;
+      background: #f8fafb;
+    }
+
+    .button.primary {
+      color: #fff;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .button.primary:hover {
+      border-color: var(--accent-strong);
+      background: var(--accent-strong);
+    }
+
+    .button.danger {
+      color: var(--rose);
+      border-color: #e5bbc6;
+      background: #fff8fa;
+    }
+
+    .service-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .service-pill.online {
+      color: var(--accent-strong);
+      border-color: #9ccdc5;
+      background: #eef8f6;
+    }
+
+    .service-pill.offline {
+      color: var(--amber);
+      border-color: #dec58d;
+      background: #fff8e8;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(230px, 280px) minmax(0, 1fr) minmax(360px, 43vw);
+      gap: 18px;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    .sidebar,
+    .editor,
+    .preview {
+      min-height: 0;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 90px;
+      height: calc(100vh - 108px);
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: auto;
+    }
+
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 2px 0;
+      padding: 10px 11px;
+      border-radius: 8px;
+      color: var(--ink);
+      background: transparent;
+      text-align: left;
+    }
+
+    .nav-button:hover {
+      background: #eef4f3;
+    }
+
+    .nav-button.active {
+      color: var(--accent-strong);
+      background: #e3f0ee;
+      font-weight: 700;
+    }
+
+    .nav-button small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .editor {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 18px 13px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .section-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section-body {
+      display: grid;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field span,
+    .field-label {
+      color: #2b363d;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      min-height: 39px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(43, 138, 126, 0.14);
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 9px;
+    }
+
+    .choice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #2b363d;
+      font-size: 13px;
+    }
+
+    .choice input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .choice:has(input:checked) {
+      border-color: #8fc6bd;
+      background: #eff8f6;
+    }
+
+    .repeater {
+      display: grid;
+      gap: 12px;
+    }
+
+    .item {
+      display: grid;
+      gap: 13px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .item-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 2px;
+    }
+
+    .item-title strong {
+      font-size: 14px;
+    }
+
+    .split-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .status-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid #d8c49c;
+      border-radius: 8px;
+      background: #fff9ed;
+      color: #6c4a12;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .preview {
+      position: sticky;
+      top: 90px;
+      height: calc(100vh - 108px);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #10181d;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      color: #eef7f5;
+    }
+
+    .preview-header h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .segmented button {
+      min-width: 72px;
+      min-height: 30px;
+      border-radius: 6px;
+      color: #bcd0d5;
+      background: transparent;
+      font-size: 13px;
+    }
+
+    .segmented button.active {
+      color: #0f2928;
+      background: #d8f2ee;
+      font-weight: 700;
+    }
+
+    .validation {
+      min-height: 40px;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      color: #bcd0d5;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .validation strong {
+      color: #e8f8f5;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      color: #d9f1ec;
+      background: #10181d;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    @media (max-width: 1180px) {
+      .workspace {
+        grid-template-columns: 220px minmax(0, 1fr);
+      }
+
+      .preview {
+        position: static;
+        grid-column: 1 / -1;
+        height: 520px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .workspace {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+      }
+
+      .sidebar,
+      .preview {
+        position: static;
+        height: auto;
+        max-height: none;
+      }
+
+      .sidebar {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .preview {
+        min-height: 520px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Content Agent 配置器</h1>
+        <span>可视化编辑 Skill 配置，实时生成 config.yaml / config.json</span>
+      </div>
+      <div class="top-actions">
+        <span class="service-pill offline" id="serviceStatus">本地服务未连接</span>
+        <button class="button primary" id="saveServerButton" type="button" disabled>保存到 config.yaml</button>
+        <button class="button" id="importJsonButton" type="button">导入 JSON</button>
+        <button class="button" id="copyButton" type="button">复制预览</button>
+        <button class="button" id="downloadYamlButton" type="button">下载 YAML</button>
+        <button class="button" id="downloadJsonButton" type="button">下载 JSON</button>
+        <button class="button" id="saveFileButton" type="button">另存为文件</button>
+      </div>
+      <input class="file-input" id="jsonFileInput" type="file" accept="application/json,.json">
+    </header>
+
+    <main class="workspace">
+      <nav class="sidebar" aria-label="配置分区">
+        <button class="nav-button active" data-target="basic" type="button">基本信息 <small>L1</small></button>
+        <button class="nav-button" data-target="accounts" type="button">账号矩阵 <small>L1</small></button>
+        <button class="nav-button" data-target="storage" type="button">内容存储 <small>L1</small></button>
+        <button class="nav-button" data-target="workflow" type="button">工作流 <small>L1</small></button>
+        <button class="nav-button" data-target="hot" type="button">热点追踪 <small>L2</small></button>
+        <button class="nav-button" data-target="video" type="button">视频与竞品 <small>L2</small></button>
+        <button class="nav-button" data-target="automation" type="button">自动化 <small>L2</small></button>
+        <button class="nav-button" data-target="permissions" type="button">权限与工具 <small>L1</small></button>
+        <button class="nav-button" data-target="onboarding" type="button">缺失字段 <small>状态</small></button>
+      </nav>
+
+      <section class="editor" aria-label="配置表单">
+        <section class="section" id="basic">
+          <div class="section-header">
+            <div>
+              <h2>基本信息</h2>
+              <p>定义用户、Agent 角色和日常协作风格。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="grid-2">
+              <label class="field">
+                <span>配置版本</span>
+                <input data-bind="version" type="text">
+              </label>
+              <label class="field">
+                <span>用户称呼</span>
+                <input data-bind="user.display_name" type="text">
+              </label>
+              <label class="field">
+                <span>所在地 / 内容 base</span>
+                <input data-bind="user.location" type="text">
+              </label>
+              <label class="field">
+                <span>Agent 名字</span>
+                <input data-bind="assistant.name" type="text">
+              </label>
+            </div>
+            <label class="field">
+              <span>用户背景</span>
+              <textarea data-bind="user.bio"></textarea>
+            </label>
+            <div class="grid-2">
+              <label class="field">
+                <span>Agent 角色</span>
+                <select data-bind="assistant.role">
+                  <option value="content_partner">内容创作搭档</option>
+                  <option value="operations_assistant">运营助理</option>
+                  <option value="writing_coach">写作教练</option>
+                  <option value="knowledge_manager">资料管理员</option>
+                  <option value="strategist">内容军师</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>私密备注</span>
+                <input data-bind="user.private_notes" type="text">
+              </label>
+            </div>
+            <div>
+              <div class="field-label">协作风格</div>
+              <div class="choice-grid" data-checkbox-group="assistant.interaction_style">
+                <label class="choice"><input type="checkbox" value="concise"> 简洁直接</label>
+                <label class="choice"><input type="checkbox" value="warm"> 温和陪伴</label>
+                <label class="choice"><input type="checkbox" value="professional"> 专业严谨</label>
+                <label class="choice"><input type="checkbox" value="sharp"> 犀利有观点</label>
+                <label class="choice"><input type="checkbox" value="proactive"> 主动推进</label>
+                <label class="choice"><input type="checkbox" value="offer_options"> 多给选择</label>
+              </div>
+            </div>
+            <label class="field">
+              <span>沟通规则</span>
+              <textarea data-list-bind="assistant.communication_rules" placeholder="每行一条，例如：选题阶段自然引导，不做强制选择题。"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="section" id="accounts">
+          <div class="section-header">
+            <div>
+              <h2>账号矩阵</h2>
+              <p>每个账号可以配置独立定位、受众、边界和写作风格。</p>
+            </div>
+            <button class="button primary" id="addAccountButton" type="button">新增账号</button>
+          </div>
+          <div class="section-body">
+            <div class="repeater" id="accountsList"></div>
+          </div>
+        </section>
+
+        <section class="section" id="storage">
+          <div class="section-header">
+            <div>
+              <h2>内容存储</h2>
+              <p>用逻辑路由连接热点、转写、竞品、文稿和归档位置。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="grid-3">
+              <label class="field">
+                <span>默认存储平台</span>
+                <select data-bind="storage.default_provider">
+                  <option value="feishu">飞书</option>
+                  <option value="notion">Notion</option>
+                  <option value="local">本地文件</option>
+                  <option value="obsidian">Obsidian</option>
+                  <option value="google_drive">Google Drive</option>
+                  <option value="other">其他</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>链接返回规则</span>
+                <select data-bind="storage.link_policy">
+                  <option value="always_return_link">每次都发链接</option>
+                  <option value="return_link_when_available">有链接就发</option>
+                  <option value="never_return_link">不发链接</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>日期格式</span>
+                <input data-bind="storage.naming_rules.date_format" type="text">
+              </label>
+            </div>
+
+            <div>
+              <div class="split-row">
+                <div>
+                  <div class="field-label">存储空间</div>
+                  <div class="hint">飞书知识库、Notion database、本地目录或 Obsidian vault 都放在这里。</div>
+                </div>
+                <button class="button" id="addWorkspaceButton" type="button">新增空间</button>
+              </div>
+              <div class="repeater" id="workspacesList"></div>
+            </div>
+
+            <div>
+              <div class="split-row">
+                <div>
+                  <div class="field-label">内容路由</div>
+                  <div class="hint">Skill 使用 route key，不直接写死某个平台的 ID。</div>
+                </div>
+                <button class="button" id="addRouteButton" type="button">新增路由</button>
+              </div>
+              <div class="repeater" id="routesList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="workflow">
+          <div class="section-header">
+            <div>
+              <h2>内容工作流</h2>
+              <p>定义从选题到发布的默认流程和确认规则。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="grid-2">
+              <label class="field">
+                <span>默认账号</span>
+                <select id="defaultAccountSelect" data-bind="content_workflow.default_account_id"></select>
+              </label>
+              <label class="field">
+                <span>账号不清楚时</span>
+                <select data-bool-bind="content_workflow.ask_before_writing_when_account_unclear">
+                  <option value="true">先问用户</option>
+                  <option value="false">使用默认账号</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <div class="field-label">内容分类</div>
+              <div class="choice-grid" data-checkbox-group="content_workflow.content_categories">
+                <label class="choice"><input type="checkbox" value="hot_topics"> 热点</label>
+                <label class="choice"><input type="checkbox" value="transcripts"> 转写</label>
+                <label class="choice"><input type="checkbox" value="competitors"> 竞品</label>
+                <label class="choice"><input type="checkbox" value="topic_pool"> 选题池</label>
+                <label class="choice"><input type="checkbox" value="drafts"> 文稿</label>
+                <label class="choice"><input type="checkbox" value="published"> 发布归档</label>
+                <label class="choice"><input type="checkbox" value="materials"> 素材</label>
+                <label class="choice"><input type="checkbox" value="reviews"> 复盘</label>
+              </div>
+            </div>
+            <label class="field">
+              <span>默认流程</span>
+              <textarea data-list-bind="content_workflow.draft_lifecycle"></textarea>
+            </label>
+            <div>
+              <div class="field-label">确认规则</div>
+              <div class="choice-grid">
+                <label class="choice"><input data-bool-check="content_workflow.confirmation_policy.ask_before_saving" type="checkbox"> 保存前确认</label>
+                <label class="choice"><input data-bool-check="content_workflow.confirmation_policy.ask_before_external_share" type="checkbox"> 对外分享前确认</label>
+                <label class="choice"><input data-bool-check="content_workflow.confirmation_policy.ask_after_each_revision" type="checkbox"> 每次修改后确认</label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="hot">
+          <div class="section-header">
+            <div>
+              <h2>热点追踪</h2>
+              <p>配置热点来源、筛选关键词、选题角度和输出位置。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="grid-3">
+              <label class="field">
+                <span>启用热点追踪</span>
+                <select data-bool-bind="hot_tracker.enabled">
+                  <option value="true">启用</option>
+                  <option value="false">不启用</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>最多推荐数量</span>
+                <input data-number-bind="hot_tracker.selection_preferences.max_recommendations" type="number" min="1" max="50">
+              </label>
+              <label class="field">
+                <span>输出路由</span>
+                <input data-bind="hot_tracker.output_route" type="text">
+              </label>
+            </div>
+            <div>
+              <div class="field-label">热点来源</div>
+              <div class="choice-grid" data-checkbox-group="hot_tracker.sources">
+                <label class="choice"><input type="checkbox" value="weibo"> 微博</label>
+                <label class="choice"><input type="checkbox" value="douyin"> 抖音</label>
+                <label class="choice"><input type="checkbox" value="xiaohongshu"> 小红书</label>
+                <label class="choice"><input type="checkbox" value="zhihu"> 知乎</label>
+                <label class="choice"><input type="checkbox" value="baidu"> 百度</label>
+                <label class="choice"><input type="checkbox" value="toutiao"> 头条</label>
+                <label class="choice"><input type="checkbox" value="bilibili"> B站</label>
+              </div>
+            </div>
+            <label class="field">
+              <span>偏好的切入角度</span>
+              <textarea data-list-bind="hot_tracker.selection_preferences.preferred_angles"></textarea>
+            </label>
+            <label class="field">
+              <span>避开的热点</span>
+              <textarea data-list-bind="hot_tracker.selection_preferences.avoid_topics"></textarea>
+            </label>
+            <div>
+              <div class="split-row">
+                <div>
+                  <div class="field-label">内容领域关键词</div>
+                  <div class="hint">每组关键词会用于从热点里筛选相关选题。</div>
+                </div>
+                <button class="button" id="addTopicFieldButton" type="button">新增关键词组</button>
+              </div>
+              <div class="repeater" id="topicFieldsList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="video">
+          <div class="section-header">
+            <div>
+              <h2>视频转写与竞品参考</h2>
+              <p>定义发链接后的默认动作，以及竞品内容如何保存。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="grid-3">
+              <label class="field">
+                <span>启用视频处理</span>
+                <select data-bool-bind="video_processing.enabled">
+                  <option value="true">启用</option>
+                  <option value="false">不启用</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>链接默认动作</span>
+                <select data-bind="video_processing.default_action">
+                  <option value="summarize">总结</option>
+                  <option value="transcribe">完整转写</option>
+                  <option value="extract_topics">提炼选题</option>
+                  <option value="rewrite_article">改写成文</option>
+                  <option value="ask">每次先问</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>竞品默认路由</span>
+                <input data-bind="video_processing.competitor_detection.default_route" type="text">
+              </label>
+            </div>
+            <label class="field">
+              <span>优先支持平台</span>
+              <textarea data-list-bind="video_processing.supported_platform_priority"></textarea>
+            </label>
+            <label class="field">
+              <span>竞品识别词</span>
+              <textarea data-list-bind="video_processing.competitor_detection.save_when_user_says"></textarea>
+            </label>
+            <div>
+              <div class="field-label">输出格式</div>
+              <div class="choice-grid" data-checkbox-group="video_processing.output_format">
+                <label class="choice"><input type="checkbox" value="summary"> 摘要</label>
+                <label class="choice"><input type="checkbox" value="transcript"> 转写</label>
+                <label class="choice"><input type="checkbox" value="chapters"> 章节</label>
+                <label class="choice"><input type="checkbox" value="key_quotes"> 金句</label>
+                <label class="choice"><input type="checkbox" value="article_angles"> 选题角度</label>
+                <label class="choice"><input type="checkbox" value="rewrite"> 改写稿</label>
+              </div>
+            </div>
+            <div class="grid-3">
+              <label class="field">
+                <span>转写路由</span>
+                <input data-bind="video_processing.routes.transcripts" type="text">
+              </label>
+              <label class="field">
+                <span>竞品路由</span>
+                <input data-bind="video_processing.routes.competitors" type="text">
+              </label>
+              <label class="field">
+                <span>改写路由</span>
+                <input data-bind="video_processing.routes.rewrites" type="text">
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="automation">
+          <div class="section-header">
+            <div>
+              <h2>自动化与提醒</h2>
+              <p>配置热点推送、发布提醒和复盘提醒。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <label class="field">
+              <span>时区</span>
+              <input data-bind="automation.timezone" type="text">
+            </label>
+            <div class="grid-3">
+              <div class="item" data-job="hot_topic_push">
+                <div class="item-title"><strong>热点推送</strong></div>
+                <label class="choice"><input data-bool-check="automation.hot_topic_push.enabled" type="checkbox"> 启用</label>
+                <label class="field"><span>时间</span><input data-bind="automation.hot_topic_push.schedule" type="text"></label>
+                <label class="field"><span>渠道</span><select data-bind="automation.hot_topic_push.destination"></select></label>
+                <label class="field"><span>说明</span><textarea data-bind="automation.hot_topic_push.notes"></textarea></label>
+              </div>
+              <div class="item" data-job="publish_reminder">
+                <div class="item-title"><strong>发布提醒</strong></div>
+                <label class="choice"><input data-bool-check="automation.publish_reminder.enabled" type="checkbox"> 启用</label>
+                <label class="field"><span>时间</span><input data-bind="automation.publish_reminder.schedule" type="text"></label>
+                <label class="field"><span>渠道</span><select data-bind="automation.publish_reminder.destination"></select></label>
+                <label class="field"><span>说明</span><textarea data-bind="automation.publish_reminder.notes"></textarea></label>
+              </div>
+              <div class="item" data-job="review_reminder">
+                <div class="item-title"><strong>复盘提醒</strong></div>
+                <label class="choice"><input data-bool-check="automation.review_reminder.enabled" type="checkbox"> 启用</label>
+                <label class="field"><span>时间</span><input data-bind="automation.review_reminder.schedule" type="text"></label>
+                <label class="field"><span>渠道</span><select data-bind="automation.review_reminder.destination"></select></label>
+                <label class="field"><span>说明</span><textarea data-bind="automation.review_reminder.notes"></textarea></label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="permissions">
+          <div class="section-header">
+            <div>
+              <h2>权限与工具</h2>
+              <p>敏感操作保持确认；凭证只记录环境变量名，不保存密钥明文。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div>
+              <div class="field-label">默认允许</div>
+              <div class="choice-grid">
+                <label class="choice"><input data-bool-check="permissions.allow_create_documents" type="checkbox"> 创建文档</label>
+                <label class="choice"><input data-bool-check="permissions.allow_edit_existing_documents" type="checkbox"> 编辑已有文档</label>
+                <label class="choice"><input data-bool-check="permissions.allow_send_messages" type="checkbox"> 发送消息</label>
+                <label class="choice"><input data-bool-check="permissions.allow_create_reminders" type="checkbox"> 创建提醒</label>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">必须确认的动作</div>
+              <div class="choice-grid" data-checkbox-group="permissions.require_confirmation_for">
+                <label class="choice"><input type="checkbox" value="delete"> 删除</label>
+                <label class="choice"><input type="checkbox" value="overwrite"> 覆盖</label>
+                <label class="choice"><input type="checkbox" value="external_share"> 对外分享</label>
+                <label class="choice"><input type="checkbox" value="public_publish"> 公开发布</label>
+                <label class="choice"><input type="checkbox" value="send_email"> 发邮件</label>
+                <label class="choice"><input type="checkbox" value="calendar_invite"> 日历邀请</label>
+                <label class="choice"><input type="checkbox" value="bulk_operation"> 批量操作</label>
+                <label class="choice"><input type="checkbox" value="paid_action"> 付费/合同</label>
+                <label class="choice"><input type="checkbox" value="legal_commitment"> 法律承诺</label>
+              </div>
+            </div>
+            <label class="field">
+              <span>密钥策略</span>
+              <textarea data-bind="permissions.secret_policy"></textarea>
+            </label>
+            <div class="grid-3" id="integrationsGrid"></div>
+          </div>
+        </section>
+
+        <section class="section" id="onboarding">
+          <div class="section-header">
+            <div>
+              <h2>Onboarding 状态</h2>
+              <p>记录配置是否完成，以及哪些字段后续还需要补齐。</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="grid-2">
+              <label class="field">
+                <span>是否完成</span>
+                <select data-bool-bind="onboarding.completed">
+                  <option value="true">已完成</option>
+                  <option value="false">未完成</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>完成时间</span>
+                <input data-bind="onboarding.completed_at" type="text" placeholder="2026-05-05T12:00:00+08:00">
+              </label>
+            </div>
+            <label class="field">
+              <span>缺失字段</span>
+              <textarea data-list-bind="onboarding.missing_fields"></textarea>
+            </label>
+            <label class="field">
+              <span>最近检查时间</span>
+              <input data-bind="onboarding.last_reviewed_at" type="text">
+            </label>
+            <div class="status-strip">
+              <span>浏览器不能在未授权的情况下直接覆盖本地文件。可以使用“保存为文件”选择保存路径，或下载后替换为 config.yaml。</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <aside class="preview" aria-label="配置预览">
+        <div class="preview-header">
+          <h2>实时预览</h2>
+          <div class="segmented">
+            <button class="active" id="yamlTab" type="button">YAML</button>
+            <button id="jsonTab" type="button">JSON</button>
+          </div>
+        </div>
+        <div class="validation" id="validationSummary"></div>
+        <pre id="previewOutput"></pre>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const destinationOptions = [
+      ["current_chat", "当前对话"],
+      ["dm", "私聊"],
+      ["group", "群聊"],
+      ["document", "文档"],
+      ["calendar", "日历"],
+      ["local_only", "仅本地"]
+    ];
+
+    const defaultConfig = {
+      version: "1.8.0",
+      user: {
+        display_name: "",
+        location: "",
+        bio: "",
+        private_notes: ""
+      },
+      assistant: {
+        name: "内容搭档",
+        role: "",
+        interaction_style: ["proactive", "concise", "sharp", "offer_options"],
+        communication_rules: [
+          "选题阶段自然引导，不做强制选择题。",
+          "写作阶段先确认账号，除非用户已经说清楚。",
+          "定稿后提醒用户可以设置发布提醒。"
+        ]
+      },
+      accounts: [
+        {
+          id: "primary_account",
+          name: "",
+          platforms: ["小红书", "抖音"],
+          positioning: "",
+          persona: ["professional", "warm", "grounded", "practical"],
+          audience: {
+            description: "想改善饮食、体重、情绪状态和生活质量的人。",
+            pain_points: ["不知道如何健康饮食", "容易焦虑和内耗", "想获得可执行的生活建议"],
+            desired_outcomes: ["吃得更健康", "情绪更稳定", "建立更好的日常习惯"]
+          },
+          content_boundaries: {
+            allowed_topics: ["营养科普", "心理健康", "情绪管理", "生活方式"],
+            avoid_topics: ["夸大疗效", "未经证实的医疗建议"],
+            claims_policy: "涉及健康、营养、心理建议时保持谨慎，避免诊断式表达。"
+          },
+          writing_profile: {
+            formats: ["short_video_script", "xiaohongshu_note"],
+            tone: ["plainspoken", "professional_accessible", "warm"],
+            structure: ["hook", "daily_example", "expert_explanation", "action_steps", "closing_line"],
+            length_defaults: { short_video_seconds: 60, article_words: 900 },
+            style_references: [],
+            banned_words: [],
+            must_include: []
+          },
+          default_storage: {
+            workspace_id: "local_workspace",
+            drafts_route: "drafts",
+            published_route: "published"
+          }
+        }
+      ],
+      storage: {
+        default_provider: "local",
+        workspaces: [
+          { id: "local_workspace", provider: "local", name: "默认知识结构", description: "默认本地知识库；适合还没有现成知识体系的新用户，先用四个基础分区开始沉淀内容。", external_id: "", base_path: "./知识结构" }
+        ],
+        routes: {
+          knowledge_system: { workspace_id: "local_workspace", provider_target_id: "", path: "知识体系", description: "用户的长期知识输入，例如书籍、文章、课程、研究和个人观点。", create_mode: "new_document", default_title_pattern: "[知识] {title}" },
+          hot_topics: { workspace_id: "local_workspace", provider_target_id: "", path: "热点素材", description: "每日抓取的热点内容、趋势、榜单和选题机会。", create_mode: "new_document", default_title_pattern: "热点追踪日报 {date}" },
+          transcripts: { workspace_id: "local_workspace", provider_target_id: "", path: "知识体系/转写", description: "视频、播客、音频转写内容；默认作为知识输入的一部分。", create_mode: "new_document", default_title_pattern: "[转写] {title}" },
+          competitors: { workspace_id: "local_workspace", provider_target_id: "", path: "竞品素材", description: "竞品账号文章、视频转写和拆解。", create_mode: "new_document", default_title_pattern: "[竞品] {title}" },
+          drafts: { workspace_id: "local_workspace", provider_target_id: "", path: "历史文章/共创草稿", description: "和 Agent 一起写过的草稿、半成品文稿和修改过程。", create_mode: "new_document", default_title_pattern: "[文稿] {date} {title}" },
+          published: { workspace_id: "local_workspace", provider_target_id: "", path: "历史文章/已发布", description: "已发布内容归档。", create_mode: "new_document", default_title_pattern: "" },
+          historical_articles: { workspace_id: "local_workspace", provider_target_id: "", path: "历史文章", description: "用户过往发布的内容，以及和 Agent 一起写过的文章总归档。", create_mode: "new_document", default_title_pattern: "" }
+        },
+        link_policy: "always_return_link",
+        naming_rules: {
+          date_format: "YYYY-MM-DD",
+          patterns: {
+            knowledge_system: "[知识] {title}",
+            hot_topics: "热点追踪日报 {date}",
+            transcripts: "[转写] {title}",
+            competitors: "[竞品] {title}",
+            drafts: "[文稿] {date} {title}"
+          }
+        }
+      },
+      content_workflow: {
+        default_account_id: "primary_account",
+        ask_before_writing_when_account_unclear: true,
+        content_categories: ["hot_topics", "knowledge_system", "transcripts", "competitors", "topic_pool", "drafts", "published", "historical_articles", "materials", "reviews"],
+        draft_lifecycle: ["选题", "大纲", "初稿", "修改", "定稿", "发布提醒", "数据复盘"],
+        confirmation_policy: {
+          ask_before_saving: false,
+          ask_before_external_share: true,
+          ask_after_each_revision: true
+        }
+      },
+      hot_tracker: {
+        enabled: true,
+        sources: ["weibo", "douyin", "xiaohongshu", "zhihu", "baidu", "toutiao", "bilibili"],
+        topic_fields: [
+          { name: "示例领域", keywords: ["行业关键词", "用户问题", "热点事件"], angle_guidance: "用这个字段记录你想长期追踪的内容方向，以及希望如何切入热点。" }
+        ],
+        selection_preferences: {
+          preferred_angles: ["干货", "故事", "情绪共鸣"],
+          avoid_topics: ["低俗八卦", "高风险医疗承诺"],
+          max_recommendations: 8
+        },
+        output_route: "hot_topics"
+      },
+      video_processing: {
+        enabled: true,
+        default_action: "summarize",
+        supported_platform_priority: ["B站", "小红书", "抖音", "YouTube", "播客"],
+        competitor_detection: {
+          save_when_user_says: ["竞品", "对标", "参考这个", "拆解一下"],
+          default_route: "competitors"
+        },
+        routes: {
+          transcripts: "transcripts",
+          competitors: "competitors",
+          rewrites: "drafts"
+        },
+        output_format: ["summary", "transcript", "key_quotes", "article_angles"]
+      },
+      automation: {
+        timezone: "Asia/Shanghai",
+        hot_topic_push: { enabled: true, schedule: "每天 09:00", destination: "dm", notes: "推送当天热点与选题方向，附文档链接。" },
+        publish_reminder: { enabled: false, schedule: "", destination: "calendar", notes: "用户定稿后再询问是否创建发布提醒。" },
+        review_reminder: { enabled: false, schedule: "", destination: "dm", notes: "发布后 24-48 小时提醒复盘数据。" }
+      },
+      permissions: {
+        allow_create_documents: true,
+        allow_edit_existing_documents: false,
+        allow_send_messages: true,
+        allow_create_reminders: false,
+        require_confirmation_for: ["delete", "overwrite", "external_share", "public_publish", "send_email", "calendar_invite", "bulk_operation", "paid_action", "legal_commitment"],
+        secret_policy: "配置文件只记录环境变量名，不保存 token、密钥或密码明文。"
+      },
+      integrations: {
+        bibi: { enabled: true, credential_env: "BIBI_API_TOKEN", notes: "" },
+        feishu: { enabled: true, credential_env: "FEISHU_ACCESS_TOKEN", notes: "" },
+        notion: { enabled: false, credential_env: "", notes: "" },
+        obsidian: { enabled: false, credential_env: "", notes: "" },
+        local: { enabled: true, credential_env: "", notes: "本地文件不需要凭证。" },
+        google_drive: { enabled: false, credential_env: "", notes: "" },
+        other: { enabled: false, credential_env: "", notes: "" }
+      },
+      onboarding: {
+        completed: false,
+        completed_at: "",
+        missing_fields: ["user.display_name", "assistant.role", "accounts[0].name", "accounts[0].positioning"],
+        last_reviewed_at: ""
+      }
+    };
+
+    let config = structuredCloneSafe(defaultConfig);
+    let previewMode = "yaml";
+    let renderLock = false;
+    let serverOnline = false;
+    let serverConfigPath = "";
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    function structuredCloneSafe(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function getPath(path) {
+      return path.split(".").reduce((acc, key) => acc && acc[key], config);
+    }
+
+    function setPath(path, value) {
+      const parts = path.split(".");
+      let cursor = config;
+      for (let i = 0; i < parts.length - 1; i += 1) {
+        const key = parts[i];
+        if (!cursor[key] || typeof cursor[key] !== "object") cursor[key] = {};
+        cursor = cursor[key];
+      }
+      cursor[parts[parts.length - 1]] = value;
+    }
+
+    function listToText(list) {
+      return Array.isArray(list) ? list.join("\n") : "";
+    }
+
+    function textToList(text) {
+      return text.split(/\n|,/).map(item => item.trim()).filter(Boolean);
+    }
+
+    function bindStaticFields() {
+      $$("[data-bind]").forEach(el => {
+        const path = el.dataset.bind;
+        el.value = getPath(path) ?? "";
+      });
+      $$("[data-number-bind]").forEach(el => {
+        const path = el.dataset.numberBind;
+        el.value = getPath(path) ?? "";
+      });
+      $$("[data-bool-bind]").forEach(el => {
+        const path = el.dataset.boolBind;
+        el.value = String(Boolean(getPath(path)));
+      });
+      $$("[data-list-bind]").forEach(el => {
+        const path = el.dataset.listBind;
+        el.value = listToText(getPath(path));
+      });
+      $$("[data-bool-check]").forEach(el => {
+        const path = el.dataset.boolCheck;
+        el.checked = Boolean(getPath(path));
+      });
+      $$("[data-checkbox-group]").forEach(group => {
+        const values = getPath(group.dataset.checkboxGroup) || [];
+        $$("input[type='checkbox']", group).forEach(input => {
+          input.checked = values.includes(input.value);
+        });
+      });
+      updateDefaultAccountSelect();
+      fillDestinationSelects();
+    }
+
+    function fillDestinationSelects() {
+      $$("select[data-bind$='.destination']").forEach(select => {
+        if (select.options.length) return;
+        destinationOptions.forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          select.appendChild(option);
+        });
+        select.value = getPath(select.dataset.bind) || "";
+      });
+    }
+
+    function updateDefaultAccountSelect() {
+      const select = $("#defaultAccountSelect");
+      if (!select) return;
+      const current = config.content_workflow.default_account_id;
+      select.innerHTML = "";
+      config.accounts.forEach(account => {
+        const option = document.createElement("option");
+        option.value = account.id;
+        option.textContent = `${account.name || account.id} (${account.id})`;
+        select.appendChild(option);
+      });
+      select.value = current || config.accounts[0]?.id || "";
+    }
+
+    function renderAccounts() {
+      const root = $("#accountsList");
+      root.innerHTML = "";
+      config.accounts.forEach((account, index) => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `
+          <div class="item-title">
+            <strong>账号 ${index + 1}</strong>
+            <button class="button danger" type="button" data-remove-account="${index}">删除</button>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>ID</span><input type="text" data-account="${index}" data-field="id"></label>
+            <label class="field"><span>账号名称</span><input type="text" data-account="${index}" data-field="name"></label>
+            <label class="field"><span>发布平台</span><input type="text" data-account="${index}" data-field="platforms"></label>
+          </div>
+          <label class="field"><span>账号定位</span><input type="text" data-account="${index}" data-field="positioning"></label>
+          <div class="grid-2">
+            <label class="field"><span>人设关键词</span><textarea data-account="${index}" data-field="persona"></textarea></label>
+            <label class="field"><span>受众描述</span><textarea data-account="${index}" data-field="audience.description"></textarea></label>
+          </div>
+          <div class="grid-2">
+            <label class="field"><span>受众痛点</span><textarea data-account="${index}" data-field="audience.pain_points"></textarea></label>
+            <label class="field"><span>受众想要的结果</span><textarea data-account="${index}" data-field="audience.desired_outcomes"></textarea></label>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>可讲话题</span><textarea data-account="${index}" data-field="content_boundaries.allowed_topics"></textarea></label>
+            <label class="field"><span>避免话题</span><textarea data-account="${index}" data-field="content_boundaries.avoid_topics"></textarea></label>
+            <label class="field"><span>敏感表达规则</span><textarea data-account="${index}" data-field="content_boundaries.claims_policy"></textarea></label>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>内容格式</span><textarea data-account="${index}" data-field="writing_profile.formats"></textarea></label>
+            <label class="field"><span>内容语气</span><textarea data-account="${index}" data-field="writing_profile.tone"></textarea></label>
+            <label class="field"><span>内容结构</span><textarea data-account="${index}" data-field="writing_profile.structure"></textarea></label>
+          </div>
+          <div class="grid-2">
+            <label class="field"><span>默认秒数</span><input type="number" min="5" data-account="${index}" data-field="writing_profile.length_defaults.short_video_seconds"></label>
+            <label class="field"><span>默认文章字数</span><input type="number" min="50" data-account="${index}" data-field="writing_profile.length_defaults.article_words"></label>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>参考风格</span><textarea data-account="${index}" data-field="writing_profile.style_references"></textarea></label>
+            <label class="field"><span>禁用词</span><textarea data-account="${index}" data-field="writing_profile.banned_words"></textarea></label>
+            <label class="field"><span>必须包含</span><textarea data-account="${index}" data-field="writing_profile.must_include"></textarea></label>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>默认工作区</span><input type="text" data-account="${index}" data-field="default_storage.workspace_id"></label>
+            <label class="field"><span>草稿路由</span><input type="text" data-account="${index}" data-field="default_storage.drafts_route"></label>
+            <label class="field"><span>发布归档路由</span><input type="text" data-account="${index}" data-field="default_storage.published_route"></label>
+          </div>
+        `;
+        root.appendChild(item);
+        $$("[data-account]", item).forEach(input => {
+          const value = getNested(account, input.dataset.field);
+          input.value = Array.isArray(value) ? value.join("\n") : value ?? "";
+        });
+      });
+    }
+
+    function renderWorkspaces() {
+      const root = $("#workspacesList");
+      root.innerHTML = "";
+      config.storage.workspaces.forEach((workspace, index) => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `
+          <div class="item-title">
+            <strong>空间 ${index + 1}</strong>
+            <button class="button danger" type="button" data-remove-workspace="${index}">删除</button>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>ID</span><input type="text" data-workspace="${index}" data-field="id"></label>
+            <label class="field"><span>平台</span>
+              <select data-workspace="${index}" data-field="provider">
+                <option value="feishu">飞书</option>
+                <option value="notion">Notion</option>
+                <option value="local">本地</option>
+                <option value="obsidian">Obsidian</option>
+                <option value="google_drive">Google Drive</option>
+                <option value="other">其他</option>
+              </select>
+            </label>
+            <label class="field"><span>名称</span><input type="text" data-workspace="${index}" data-field="name"></label>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>外部 ID</span><input type="text" data-workspace="${index}" data-field="external_id"></label>
+            <label class="field"><span>路径</span><input type="text" data-workspace="${index}" data-field="base_path"></label>
+            <label class="field"><span>说明</span><input type="text" data-workspace="${index}" data-field="description"></label>
+          </div>
+        `;
+        root.appendChild(item);
+        $$("[data-workspace]", item).forEach(input => {
+          input.value = workspace[input.dataset.field] ?? "";
+        });
+      });
+    }
+
+    function renderRoutes() {
+      const root = $("#routesList");
+      root.innerHTML = "";
+      Object.entries(config.storage.routes).forEach(([key, route]) => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `
+          <div class="item-title">
+            <strong>${key}</strong>
+            <button class="button danger" type="button" data-remove-route="${key}">删除</button>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>Route key</span><input type="text" data-route-key="${key}" value="${escapeHtml(key)}"></label>
+            <label class="field"><span>工作区 ID</span><input type="text" data-route="${key}" data-field="workspace_id"></label>
+            <label class="field"><span>创建模式</span>
+              <select data-route="${key}" data-field="create_mode">
+                <option value="new_document">新文档</option>
+                <option value="append_to_document">追加到文档</option>
+                <option value="new_file">新文件</option>
+                <option value="append_to_file">追加到文件</option>
+                <option value="manual">手动</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>目标 ID</span><input type="text" data-route="${key}" data-field="provider_target_id"></label>
+            <label class="field"><span>路径</span><input type="text" data-route="${key}" data-field="path"></label>
+            <label class="field"><span>标题规则</span><input type="text" data-route="${key}" data-field="default_title_pattern"></label>
+          </div>
+          <label class="field"><span>说明</span><input type="text" data-route="${key}" data-field="description"></label>
+        `;
+        root.appendChild(item);
+        $$("[data-route]", item).forEach(input => {
+          input.value = route[input.dataset.field] ?? "";
+        });
+      });
+    }
+
+    function renderTopicFields() {
+      const root = $("#topicFieldsList");
+      root.innerHTML = "";
+      config.hot_tracker.topic_fields.forEach((field, index) => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `
+          <div class="item-title">
+            <strong>关键词组 ${index + 1}</strong>
+            <button class="button danger" type="button" data-remove-topic="${index}">删除</button>
+          </div>
+          <div class="grid-3">
+            <label class="field"><span>名称</span><input type="text" data-topic="${index}" data-field="name"></label>
+            <label class="field"><span>关键词</span><textarea data-topic="${index}" data-field="keywords"></textarea></label>
+            <label class="field"><span>角度说明</span><textarea data-topic="${index}" data-field="angle_guidance"></textarea></label>
+          </div>
+        `;
+        root.appendChild(item);
+        $$("[data-topic]", item).forEach(input => {
+          const value = field[input.dataset.field];
+          input.value = Array.isArray(value) ? value.join("\n") : value ?? "";
+        });
+      });
+    }
+
+    function renderIntegrations() {
+      const root = $("#integrationsGrid");
+      root.innerHTML = "";
+      Object.keys(config.integrations).forEach(key => {
+        const integration = config.integrations[key];
+        const item = document.createElement("div");
+        item.className = "item";
+        item.innerHTML = `
+          <div class="item-title"><strong>${key}</strong></div>
+          <label class="choice"><input type="checkbox" data-integration="${key}" data-field="enabled"> 启用</label>
+          <label class="field"><span>环境变量名</span><input type="text" data-integration="${key}" data-field="credential_env"></label>
+          <label class="field"><span>备注</span><input type="text" data-integration="${key}" data-field="notes"></label>
+        `;
+        root.appendChild(item);
+        $$("[data-integration]", item).forEach(input => {
+          if (input.type === "checkbox") {
+            input.checked = Boolean(integration[input.dataset.field]);
+          } else {
+            input.value = integration[input.dataset.field] ?? "";
+          }
+        });
+      });
+    }
+
+    function getNested(obj, path) {
+      return path.split(".").reduce((acc, key) => acc && acc[key], obj);
+    }
+
+    function setNested(obj, path, value) {
+      const parts = path.split(".");
+      let cursor = obj;
+      for (let i = 0; i < parts.length - 1; i += 1) {
+        const key = parts[i];
+        if (!cursor[key] || typeof cursor[key] !== "object") cursor[key] = {};
+        cursor = cursor[key];
+      }
+      cursor[parts[parts.length - 1]] = value;
+    }
+
+    function updatePreview() {
+      const missing = getCriticalMissingFields();
+      config.onboarding = config.onboarding || {};
+      config.onboarding.completed = missing.length === 0;
+      config.onboarding.missing_fields = missing;
+      if (config.onboarding.completed && !config.onboarding.completed_at) {
+        config.onboarding.completed_at = new Date().toISOString().slice(0, 10);
+      }
+      const output = previewMode === "yaml" ? toYaml(config) : JSON.stringify(config, null, 2);
+      $("#previewOutput").textContent = output;
+      updateValidation(missing);
+    }
+
+    function getCriticalMissingFields() {
+      const missing = [];
+      if (!config.user.display_name) missing.push("user.display_name");
+      if (!config.assistant.role) missing.push("assistant.role");
+      if (!config.accounts.length) missing.push("accounts");
+      config.accounts.forEach((account, index) => {
+        if (!account.id) missing.push(`accounts[${index}].id`);
+        if (!account.name) missing.push(`accounts[${index}].name`);
+        if (!account.positioning) missing.push(`accounts[${index}].positioning`);
+      });
+      if (!config.storage.default_provider) missing.push("storage.default_provider");
+      if (!config.storage.workspaces.length) missing.push("storage.workspaces");
+      if (!Object.keys(config.storage.routes).length) missing.push("storage.routes");
+      return missing;
+    }
+
+    function updateValidation(missing = getCriticalMissingFields()) {
+      const summary = $("#validationSummary");
+      if (missing.length) {
+        summary.innerHTML = `<strong>${missing.length} 个关键字段待补：</strong>${missing.slice(0, 5).join("、")}${missing.length > 5 ? "..." : ""}`;
+      } else {
+        summary.innerHTML = "<strong>关键字段已齐：</strong>可以导出为 config.yaml。";
+      }
+    }
+
+    function setServiceStatus(online, text, configPath = "") {
+      serverOnline = online;
+      serverConfigPath = configPath;
+      const pill = $("#serviceStatus");
+      const saveButton = $("#saveServerButton");
+      pill.textContent = text;
+      pill.classList.toggle("online", online);
+      pill.classList.toggle("offline", !online);
+      saveButton.disabled = !online;
+      saveButton.title = online ? `保存到 ${configPath || "config.yaml"}` : "启动 config-server.mjs 后可直接保存";
+    }
+
+    async function checkServerStatus() {
+      try {
+        const response = await fetch("/api/status", { cache: "no-store" });
+        if (!response.ok) throw new Error("status failed");
+        const data = await response.json();
+        setServiceStatus(true, data.hasConfigYaml ? "本地服务已连接：config.yaml" : "本地服务已连接：等待 onboarding 保存", data.configPath);
+      } catch {
+        setServiceStatus(false, "本地服务未连接");
+      }
+    }
+
+    async function loadServerConfigIfAvailable() {
+      try {
+        const response = await fetch("/api/config", { cache: "no-store" });
+        if (!response.ok) throw new Error("config failed");
+        const data = await response.json();
+        if (data.config && typeof data.config === "object") {
+          config = mergeConfig(structuredCloneSafe(defaultConfig), data.config);
+          rerenderAll();
+          if (data.example) {
+            $("#validationSummary").innerHTML = "<strong>当前是 onboarding 模板：</strong>还没有真实 config.yaml，补齐关键字段后即可保存。";
+          } else {
+            $("#validationSummary").innerHTML = `<strong>已读取本地配置：</strong>${data.path}`;
+          }
+        } else if (data.format === "json") {
+          config = mergeConfig(structuredCloneSafe(defaultConfig), JSON.parse(data.content));
+          rerenderAll();
+        } else if (!data.example) {
+          setServiceStatus(false, "本地 YAML 未解析，暂不允许覆盖保存");
+          $("#validationSummary").innerHTML = `<strong>已读取本地 YAML：</strong>${data.path}，但页面未能解析，已禁用直接保存以避免覆盖。`;
+        } else {
+          $("#validationSummary").innerHTML = "<strong>当前是 onboarding 模板：</strong>还没有真实 config.yaml，补齐关键字段后即可保存。";
+        }
+      } catch {
+        // Static file mode or server unavailable. The built-in defaults remain usable.
+      }
+    }
+
+    async function saveToServer() {
+      if (!serverOnline) return;
+      const content = toYaml(config);
+      const response = await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: "yaml", content })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || "保存失败");
+      setServiceStatus(true, "已保存到 config.yaml", data.path);
+      $("#validationSummary").innerHTML = `<strong>已保存：</strong>${data.path}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[char]);
+    }
+
+    function yamlScalar(value) {
+      if (value === null) return "null";
+      if (typeof value === "boolean") return value ? "true" : "false";
+      if (typeof value === "number") return Number.isFinite(value) ? String(value) : "0";
+      if (value === "") return '""';
+      const text = String(value);
+      if (/[:{}\[\],&*#?|<>=!%@`]/.test(text) || /^\s|\s$/.test(text) || /^(true|false|null|yes|no|on|off|\d)/i.test(text)) {
+        return JSON.stringify(text);
+      }
+      return text;
+    }
+
+    function toYaml(value, indent = 0) {
+      const pad = " ".repeat(indent);
+      if (Array.isArray(value)) {
+        if (!value.length) return "[]";
+        return value.map(item => {
+          if (item && typeof item === "object") {
+            return `${pad}- ${toYaml(item, indent + 2).trimStart()}`;
+          }
+          return `${pad}- ${yamlScalar(item)}`;
+        }).join("\n");
+      }
+      if (value && typeof value === "object") {
+        const entries = Object.entries(value).filter(([, item]) => item !== undefined);
+        if (!entries.length) return "{}";
+        return entries.map(([key, item]) => {
+          if (item && typeof item === "object") {
+            const nested = toYaml(item, indent + 2);
+            return `${pad}${key}: ${Array.isArray(item) && !item.length ? "[]" : ""}${Array.isArray(item) && !item.length ? "" : "\n" + nested}`;
+          }
+          return `${pad}${key}: ${yamlScalar(item)}`;
+        }).join("\n");
+      }
+      return `${pad}${yamlScalar(value)}`;
+    }
+
+    function downloadFile(name, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = name;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveWithFilePicker() {
+      const content = previewMode === "yaml" ? toYaml(config) : JSON.stringify(config, null, 2);
+      const suggestedName = previewMode === "yaml" ? "config.yaml" : "config.json";
+      if (!window.showSaveFilePicker) {
+        downloadFile(suggestedName, content, previewMode === "yaml" ? "text/yaml" : "application/json");
+        return;
+      }
+      const handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [{
+          description: previewMode === "yaml" ? "YAML config" : "JSON config",
+          accept: { [previewMode === "yaml" ? "text/yaml" : "application/json"]: [previewMode === "yaml" ? ".yaml" : ".json"] }
+        }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+    }
+
+    function wireEvents() {
+      document.addEventListener("input", event => {
+        if (renderLock) return;
+        const el = event.target;
+        if (el.matches("[data-bind]")) setPath(el.dataset.bind, el.value);
+        if (el.matches("[data-number-bind]")) setPath(el.dataset.numberBind, Number(el.value || 0));
+        if (el.matches("[data-list-bind]")) setPath(el.dataset.listBind, textToList(el.value));
+        if (el.matches("[data-account]")) updateAccountField(el);
+        if (el.matches("[data-workspace]")) updateWorkspaceField(el);
+        if (el.matches("[data-route]")) updateRouteField(el);
+        if (el.matches("[data-topic]")) updateTopicField(el);
+        if (el.matches("[data-integration]")) updateIntegrationField(el);
+        updatePreview();
+      });
+
+      document.addEventListener("change", event => {
+        if (renderLock) return;
+        const el = event.target;
+        if (el.matches("[data-bool-bind]")) setPath(el.dataset.boolBind, el.value === "true");
+        if (el.matches("[data-bool-check]")) setPath(el.dataset.boolCheck, el.checked);
+        if (el.closest("[data-checkbox-group]")) {
+          const group = el.closest("[data-checkbox-group]");
+          const values = $$("input:checked", group).map(input => input.value);
+          setPath(group.dataset.checkboxGroup, values);
+        }
+        if (el.matches("[data-bind]")) setPath(el.dataset.bind, el.value);
+        if (el.matches("[data-account]")) updateAccountField(el);
+        if (el.matches("[data-workspace]")) updateWorkspaceField(el);
+        if (el.matches("[data-route]")) updateRouteField(el);
+        if (el.matches("[data-route-key]")) renameRoute(el);
+        if (el.matches("[data-integration]")) updateIntegrationField(el);
+        updatePreview();
+      });
+
+      document.addEventListener("click", event => {
+        const target = event.target;
+        if (target.matches("[data-remove-account]")) {
+          config.accounts.splice(Number(target.dataset.removeAccount), 1);
+          rerenderDynamic();
+        }
+        if (target.matches("[data-remove-workspace]")) {
+          config.storage.workspaces.splice(Number(target.dataset.removeWorkspace), 1);
+          rerenderDynamic();
+        }
+        if (target.matches("[data-remove-route]")) {
+          delete config.storage.routes[target.dataset.removeRoute];
+          rerenderDynamic();
+        }
+        if (target.matches("[data-remove-topic]")) {
+          config.hot_tracker.topic_fields.splice(Number(target.dataset.removeTopic), 1);
+          rerenderDynamic();
+        }
+      });
+
+      $$(".nav-button").forEach(button => {
+        button.addEventListener("click", () => {
+          $$(".nav-button").forEach(item => item.classList.remove("active"));
+          button.classList.add("active");
+          $(`#${button.dataset.target}`).scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+
+      $("#addAccountButton").addEventListener("click", () => {
+        config.accounts.push({
+          id: `account_${config.accounts.length + 1}`,
+          name: "新账号",
+          platforms: [],
+          positioning: "",
+          persona: [],
+          audience: { description: "", pain_points: [], desired_outcomes: [] },
+          content_boundaries: { allowed_topics: [], avoid_topics: [], claims_policy: "" },
+          writing_profile: { formats: [], tone: [], structure: [], length_defaults: { short_video_seconds: 60, article_words: 800 }, style_references: [], banned_words: [], must_include: [] },
+          default_storage: { workspace_id: "", drafts_route: "", published_route: "" }
+        });
+        rerenderDynamic();
+      });
+
+      $("#addWorkspaceButton").addEventListener("click", () => {
+        config.storage.workspaces.push({ id: `workspace_${config.storage.workspaces.length + 1}`, provider: config.storage.default_provider, name: "新空间", description: "", external_id: "", base_path: "" });
+        rerenderDynamic();
+      });
+
+      $("#addRouteButton").addEventListener("click", () => {
+        const key = `route_${Object.keys(config.storage.routes).length + 1}`;
+        config.storage.routes[key] = { workspace_id: config.storage.workspaces[0]?.id || "", provider_target_id: "", path: "", description: "", create_mode: "new_document", default_title_pattern: "" };
+        rerenderDynamic();
+      });
+
+      $("#addTopicFieldButton").addEventListener("click", () => {
+        config.hot_tracker.topic_fields.push({ name: "新领域", keywords: [], angle_guidance: "" });
+        rerenderDynamic();
+      });
+
+      $("#yamlTab").addEventListener("click", () => {
+        previewMode = "yaml";
+        $("#yamlTab").classList.add("active");
+        $("#jsonTab").classList.remove("active");
+        updatePreview();
+      });
+
+      $("#jsonTab").addEventListener("click", () => {
+        previewMode = "json";
+        $("#jsonTab").classList.add("active");
+        $("#yamlTab").classList.remove("active");
+        updatePreview();
+      });
+
+      $("#copyButton").addEventListener("click", async () => {
+        const content = $("#previewOutput").textContent;
+        try {
+          await navigator.clipboard.writeText(content);
+        } catch {
+          const textarea = document.createElement("textarea");
+          textarea.value = content;
+          textarea.style.position = "fixed";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+        }
+      });
+
+      $("#downloadYamlButton").addEventListener("click", () => downloadFile("config.yaml", toYaml(config), "text/yaml"));
+      $("#downloadJsonButton").addEventListener("click", () => downloadFile("config.json", JSON.stringify(config, null, 2), "application/json"));
+      $("#saveFileButton").addEventListener("click", () => saveWithFilePicker().catch(console.error));
+      $("#saveServerButton").addEventListener("click", () => saveToServer().catch(error => {
+        $("#validationSummary").innerHTML = `<strong>保存失败：</strong>${error.message}`;
+      }));
+
+      $("#importJsonButton").addEventListener("click", () => $("#jsonFileInput").click());
+      $("#jsonFileInput").addEventListener("change", async event => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const text = await file.text();
+        config = mergeConfig(structuredCloneSafe(defaultConfig), JSON.parse(text));
+        rerenderAll();
+        event.target.value = "";
+      });
+    }
+
+    function updateAccountField(el) {
+      const account = config.accounts[Number(el.dataset.account)];
+      if (!account) return;
+      const listFields = ["platforms", "persona", "audience.pain_points", "audience.desired_outcomes", "content_boundaries.allowed_topics", "content_boundaries.avoid_topics", "writing_profile.formats", "writing_profile.tone", "writing_profile.structure", "writing_profile.style_references", "writing_profile.banned_words", "writing_profile.must_include"];
+      let value = el.value;
+      if (listFields.includes(el.dataset.field)) value = textToList(el.value);
+      if (el.type === "number") value = Number(el.value || 0);
+      setNested(account, el.dataset.field, value);
+      if (el.dataset.field === "id") updateDefaultAccountSelect();
+    }
+
+    function updateWorkspaceField(el) {
+      const workspace = config.storage.workspaces[Number(el.dataset.workspace)];
+      if (!workspace) return;
+      workspace[el.dataset.field] = el.value;
+    }
+
+    function updateRouteField(el) {
+      const route = config.storage.routes[el.dataset.route];
+      if (!route) return;
+      route[el.dataset.field] = el.value;
+    }
+
+    function renameRoute(el) {
+      const oldKey = el.dataset.routeKey;
+      const newKey = el.value.trim();
+      if (!newKey || oldKey === newKey || config.storage.routes[newKey]) return;
+      config.storage.routes[newKey] = config.storage.routes[oldKey];
+      delete config.storage.routes[oldKey];
+      rerenderDynamic();
+    }
+
+    function updateTopicField(el) {
+      const field = config.hot_tracker.topic_fields[Number(el.dataset.topic)];
+      if (!field) return;
+      field[el.dataset.field] = el.dataset.field === "keywords" ? textToList(el.value) : el.value;
+    }
+
+    function updateIntegrationField(el) {
+      const integration = config.integrations[el.dataset.integration];
+      if (!integration) return;
+      integration[el.dataset.field] = el.type === "checkbox" ? el.checked : el.value;
+    }
+
+    function mergeConfig(base, incoming) {
+      if (!incoming || typeof incoming !== "object") return base;
+      Object.entries(incoming).forEach(([key, value]) => {
+        if (Array.isArray(value)) base[key] = value;
+        else if (value && typeof value === "object" && base[key] && typeof base[key] === "object" && !Array.isArray(base[key])) base[key] = mergeConfig(base[key], value);
+        else base[key] = value;
+      });
+      return base;
+    }
+
+    function rerenderDynamic() {
+      renderLock = true;
+      renderAccounts();
+      renderWorkspaces();
+      renderRoutes();
+      renderTopicFields();
+      renderIntegrations();
+      updateDefaultAccountSelect();
+      renderLock = false;
+      bindStaticFields();
+      updatePreview();
+    }
+
+    function rerenderAll() {
+      renderLock = true;
+      bindStaticFields();
+      renderAccounts();
+      renderWorkspaces();
+      renderRoutes();
+      renderTopicFields();
+      renderIntegrations();
+      renderLock = false;
+      bindStaticFields();
+      updatePreview();
+    }
+
+    rerenderAll();
+    wireEvents();
+    checkServerStatus().then(loadServerConfigIfAvailable);
+  </script>
+</body>
+</html>

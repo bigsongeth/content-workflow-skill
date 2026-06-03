@@ -50,6 +50,7 @@ The install script is intentionally fast and dependency-light: it only copies th
 - **Install a clean workspace**: use `scripts/install_workspace.sh`
 - **Validate package structure**: use `scripts/validate_workspace.sh`
 - **Run paid activation**: follow `assets/workspace-template/ACTIVATION_AND_BILLING.md` and verify `GET /v1/entitlements/me`
+- **Use multi-platform content fetch**: follow `references/content-fetch-api.md` (`GET /v1/content/fetch`, supports 小红书/抖音/微博/B站/公众号/视频号/快手/知乎)
 - **Run conversational onboarding**: follow `references/chat-onboarding.md` and `assets/workspace-template/ONBOARDING_FLOW.md`
 - **Understand packaged files**: read `references/workspace-layout.md`
 - **Manually test onboarding**: read `references/testing.md`
